@@ -307,7 +307,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.0.0";
+            return "1.0.1";
         }
 
         public string GetPluginAuthor()
@@ -441,7 +441,7 @@ namespace PRoConEvents
                         return;
                     }
 
-                    if (surrenderTimeoutCountdown == null)
+                    if (surrenderTimeoutCountdown == null || this.FrostbitePlayerInfoList[speaker].TeamID != surrenderingTeamID)
                     {
                         AdminSayTeam(messages[MessageName.NO_SURRENDER_VOTING].Value, this.FrostbitePlayerInfoList[speaker].TeamID);
                         return;
