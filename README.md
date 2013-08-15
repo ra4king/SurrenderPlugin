@@ -1,4 +1,0 @@
-SurrenderPlugin
-===============
-
-Surrender PRoCon Plugin
