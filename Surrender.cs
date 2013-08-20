@@ -57,7 +57,12 @@ namespace PRoConEvents
             PERCENT_VOTE,
             VOTING_BEGINS_YELL_DURATION,
             VOTING_SUCCESS_YELL_DURATION,
-            DELAY_ENDROUND,
+            DELAY_ENDROUND
+        }
+
+        private enum BoolName
+        {
+            SAY_VOTING_BEGINS_TO_ALL,
             DEBUG_MODE
         }
 
@@ -102,6 +107,7 @@ namespace PRoConEvents
         }
 
         private Dictionary<VariableName, Variable<int>> variables;
+        private Dictionary<BoolName, Variable<bool>> bools;
         private Dictionary<MessageName, Variable<string>> messages;
 
         private bool isConquest;
@@ -128,7 +134,10 @@ namespace PRoConEvents
             variables.Add(VariableName.VOTING_BEGINS_YELL_DURATION, new Variable<int>("Variables|Duration of yell when voting begins", 10));
             variables.Add(VariableName.VOTING_SUCCESS_YELL_DURATION, new Variable<int>("Variables|Duration of yell when voting is successful", 10));
             variables.Add(VariableName.DELAY_ENDROUND, new Variable<int>("Variables|Time (in seconds) delay between successful surrender and end of round", 5));
-            variables.Add(VariableName.DEBUG_MODE, new Variable<int>("Variables|Debug mode (0 = off, 1+ = on)", 1));
+
+            bools = new Dictionary<BoolName, Variable<bool>>();
+            bools.Add(BoolName.SAY_VOTING_BEGINS_TO_ALL, new Variable<bool>("Variables|Say and/or yell 'surrender voting begins' to all (false = team only, true = to all)", false));
+            bools.Add(BoolName.DEBUG_MODE, new Variable<bool>("Variables|Debug mode", false));
 
             messages = new Dictionary<MessageName, Variable<string>>();
             messages.Add(MessageName.WRONG_GAMEMODE, new Variable<string>("Messages|Wrong gamemode message", "You can't surrender while playing this game mode."));
@@ -188,10 +197,8 @@ namespace PRoConEvents
 
         public void ConsoleDebug(string msg)
         {
-            if (variables[VariableName.DEBUG_MODE].Value == 0)
-                return;
-
-            ConsoleWrite(msg, MessageType.Debug);
+            if (bools[BoolName.DEBUG_MODE].Value)
+                ConsoleWrite(msg, MessageType.Debug);
         }
 
         public void ConsoleWarn(string msg)
@@ -214,10 +221,8 @@ namespace PRoConEvents
             if (msg.Length > 128)
                 ConsoleError("AdminSay msg > 128. msg: " + msg);
 
-            if (variables[VariableName.DEBUG_MODE].Value != 0)
-            {
+            if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Saying to all: " + msg);
-            }
 
             this.ExecuteCommand("procon.protected.send", "admin.say", msg, "all");
         }
@@ -227,10 +232,8 @@ namespace PRoConEvents
             if (msg.Length > 128)
                 ConsoleError("AdminSay msg > 128. msg: " + msg);
 
-            if (variables[VariableName.DEBUG_MODE].Value != 0)
-            {
+            if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Saying to Team " + teamID + ": " + msg);
-            }
 
             this.ExecuteCommand("procon.protected.send", "admin.say", msg, "team", string.Concat(teamID));
         }
@@ -240,20 +243,16 @@ namespace PRoConEvents
             if (msg.Length > 128)
                 ConsoleError("AdminSay msg > 128. msg: " + msg);
 
-            if (variables[VariableName.DEBUG_MODE].Value != 0)
-            {
+            if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Saying to Squad " + squadID + " in Team " + teamID + ": " + msg);
-            }
 
             this.ExecuteCommand("procon.protected.send", "admin.say", msg, "squad", string.Concat(teamID), string.Concat(squadID));
         }
 
         public void AdminSayPlayer(string msg, string player)
         {
-            if (variables[VariableName.DEBUG_MODE].Value != 0)
-            {
+            if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Saying to player '" + player + "': " + msg);
-            }
 
             this.ExecuteCommand("procon.protected.send", "admin.say", msg, "player", player);
         }
@@ -268,10 +267,8 @@ namespace PRoConEvents
             if (msg.Length > 256)
                 ConsoleError("AdminYell msg > 256. msg: " + msg);
 
-            if (variables[VariableName.DEBUG_MODE].Value != 0)
-            {
+            if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Yelling to all: " + msg);
-            }
 
             this.ExecuteCommand("procon.protected.send", "admin.yell", msg, string.Concat(duration), "all");
         }
@@ -286,10 +283,8 @@ namespace PRoConEvents
             if (msg.Length > 256)
                 ConsoleError("AdminYell msg > 256. msg: " + msg);
 
-            if (variables[VariableName.DEBUG_MODE].Value != 0)
-            {
+            if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Yelling to Team " + teamID + ": " + msg);
-            }
 
             this.ExecuteCommand("procon.protected.send", "admin.yell", msg, string.Concat(duration), "team", string.Concat(teamID));
         }
@@ -304,10 +299,8 @@ namespace PRoConEvents
             if (msg.Length > 256)
                 ConsoleError("AdminYell msg > 256. msg: " + msg);
 
-            if (variables[VariableName.DEBUG_MODE].Value != 0)
-            {
+            if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Yelling to Squad " + squadID + " in Team " + teamID + ": " + msg);
-            }
 
             this.ExecuteCommand("procon.protected.send", "admin.yell", msg, string.Concat(duration), "squad", string.Concat(teamID), string.Concat(squadID));
         }
@@ -322,10 +315,8 @@ namespace PRoConEvents
             if (msg.Length > 256)
                 ConsoleError("AdminYell msg > 256. msg: " + msg);
 
-            if (variables[VariableName.DEBUG_MODE].Value != 0)
-            {
+            if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Yelling to player '" + player + "': " + msg);
-            }
 
             this.ExecuteCommand("procon.protected.send", "admin.yell", msg, string.Concat(duration), "player", player);
         }
@@ -337,7 +328,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.0.1";
+            return "1.1";
         }
 
         public string GetPluginAuthor()
@@ -384,6 +375,8 @@ namespace PRoConEvents
 
             foreach (VariableName name in variables.Keys)
                 pluginVariables.Add(new CPluginVariable(variables[name].Description, "int", string.Concat(variables[name].Value)));
+            foreach (BoolName name in bools.Keys)
+                pluginVariables.Add(new CPluginVariable(bools[name].Description, "bool", string.Concat(bools[name].Value)));
             foreach (MessageName name in messages.Keys)
                 pluginVariables.Add(new CPluginVariable(messages[name].Description, "string", messages[name].Value));
 
@@ -405,6 +398,28 @@ namespace PRoConEvents
                     try
                     {
                         v.Value = int.Parse(strValue);
+                    }
+                    catch
+                    {
+                        ConsoleException("Invalid value for " + name + ": " + strValue);
+                        return;
+                    }
+
+                    ConsoleWrite(name + " value changed to " + v.Value + ".");
+
+                    return;
+                }
+            }
+
+            foreach (BoolName name in bools.Keys)
+            {
+                Variable<bool> v = bools[name];
+
+                if (v.Description.Contains(strVariable))
+                {
+                    try
+                    {
+                        v.Value = bool.Parse(strValue);
                     }
                     catch
                     {
@@ -599,8 +614,19 @@ namespace PRoConEvents
 
                         votesNeeded = (int)Math.Round((percentVote * teamPlayerCount) / 100.0);
 
-                        AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID);
-                        AdminYellTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID, variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
+                        if (bools[BoolName.SAY_VOTING_BEGINS_TO_ALL].Value)
+                        {
+                            AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID);
+                            if (variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value > 0)
+                                AdminYellTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID, variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
+                        }
+                        else
+                        {
+                            AdminSayAll(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)));
+                            if (variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value > 0)
+                                AdminYellAll(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
+                        }
+                        
                         ConsoleWrite("Surrender voting begins by Team " + surrenderingTeamID + " with " + votesNeeded + " votes needed.");
                     }
                     else
@@ -616,7 +642,10 @@ namespace PRoConEvents
                         if (votedNames.Count >= votesNeeded)
                         {
                             AdminSayAll(String.Format(messages[MessageName.SURRENDER_VOTING_PASSES].Value, votedNames.Count));
-                            AdminYellAll(String.Format(messages[MessageName.SURRENDER_VOTING_PASSES].Value, votedNames.Count), variables[VariableName.VOTING_SUCCESS_YELL_DURATION].Value);
+
+                            if(variables[VariableName.VOTING_SUCCESS_YELL_DURATION].Value > 0)
+                                AdminYellAll(String.Format(messages[MessageName.SURRENDER_VOTING_PASSES].Value, votedNames.Count), variables[VariableName.VOTING_SUCCESS_YELL_DURATION].Value);
+
                             ConsoleWrite("Surrender voting successful with " + votedNames.Count + " votes. Ending round.");
 
                             new Thread((ThreadStart)delegate { endroundCountdown(winningTeamID); }).Start();
