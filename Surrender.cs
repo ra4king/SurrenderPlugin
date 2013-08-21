@@ -328,7 +328,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.1";
+            return "1.1.1";
         }
 
         public string GetPluginAuthor()
@@ -544,7 +544,7 @@ namespace PRoConEvents
 
                     if (losingTeamID != winningTeamID)
                     {
-                        ConsoleDebug(" Losing team ID: " + losingTeamID + " with score: " + losingTeamScore);
+                        ConsoleDebug("Losing team ID: " + losingTeamID + " with score: " + losingTeamScore);
                         ConsoleDebug("Winning team ID: " + winningTeamID + " with score: " + winningTeamScore);
                     }
 
@@ -616,15 +616,15 @@ namespace PRoConEvents
 
                         if (bools[BoolName.SAY_VOTING_BEGINS_TO_ALL].Value)
                         {
-                            AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID);
-                            if (variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value > 0)
-                                AdminYellTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID, variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
-                        }
-                        else
-                        {
                             AdminSayAll(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)));
                             if (variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value > 0)
                                 AdminYellAll(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
+                        }
+                        else
+                        {
+                            AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID);
+                            if (variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value > 0)
+                                AdminYellTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID, variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
                         }
                         
                         ConsoleWrite("Surrender voting begins by Team " + surrenderingTeamID + " with " + votesNeeded + " votes needed.");
@@ -742,7 +742,6 @@ namespace PRoConEvents
             resetVoting();
 
             startTicketCount = -1;
-            isConquest = serverInfo.GameMode.ToLower().Contains("conquest");
 
             ConsoleDebug("Level loaded! Is conquest? " + isConquest);
         }
@@ -778,6 +777,8 @@ namespace PRoConEvents
             if (startTicketCount == -1)
             {
                 resetVoting();
+
+                isConquest = serverInfo.GameMode.ToLower().Contains("conquest");
 
                 startTicketCount = serverInfo.TeamScores[0].Score;
                 roundStartTime = DateTime.Now;
