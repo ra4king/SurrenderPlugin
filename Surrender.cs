@@ -125,10 +125,10 @@ namespace PRoConEvents
         public Surrender()
         {
             variables = new Dictionary<VariableName, Variable<int>>();
-            variables.Add(VariableName.TIME_TO_VOTE, new Variable<int>("Variables|Time (in seconds) until surrender available", 300));
+            variables.Add(VariableName.TIME_TO_VOTE, new Variable<int>("Variables|Time (in seconds) until surrender available", 180));
             variables.Add(VariableName.TIMEOUT, new Variable<int>("Variables|Time (in seconds) until surrender expires", 180));
             variables.Add(VariableName.MIN_PLAYERS, new Variable<int>("Variables|Minimum required number of players on server to surrender", 16));
-            variables.Add(VariableName.MIN_TICKET_GAP, new Variable<int>("Variables|Minimum ticket gap between two teams", 100));
+            variables.Add(VariableName.MIN_TICKET_GAP, new Variable<int>("Variables|Minimum ticket gap between two teams", 80));
             variables.Add(VariableName.MIN_PERCENT_TICKET_REMAINING, new Variable<int>("Variables|Percent minimum of tickets remaining", 20));
             variables.Add(VariableName.PERCENT_VOTE, new Variable<int>("Variables|Percent of team required to vote", 30));
             variables.Add(VariableName.VOTING_BEGINS_YELL_DURATION, new Variable<int>("Variables|Duration of yell when voting begins", 10));
@@ -328,7 +328,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.1.1";
+            return "1.1.2";
         }
 
         public string GetPluginAuthor()
@@ -343,7 +343,15 @@ namespace PRoConEvents
 
         public string GetPluginDescription()
         {
-            return "Allows ability for losing team to surrender.";
+            return @"
+        Allows ability for losing team to surrender. Only Conquest is supported now.
+        <br />
+        <h2>Commands</h2>
+        <table>
+        <tr><td><b>/surrender<br/>!surrender<br/>@surrender<b></td><td>Initiates or adds a vote to current surrender vote.</td></tr>
+        <tr><td><b>/surrenderstatus<br/>!surrenderstatus<br/>@surrenderstatus<b></td><td>Prints vote count, votes needed, and time left of current surrender vote.</td></tr>
+        </table>
+        ";
         }
 
         public void OnPluginLoaded(string strHostName, string strPort, string strPRoConVersion)
