@@ -57,6 +57,7 @@ namespace PRoConEvents
             PERCENT_VOTE,
             VOTING_BEGINS_YELL_DURATION,
             VOTING_SUCCESS_YELL_DURATION,
+            SURRENDER_VOTING_STATS_INTERVAL,
             DELAY_ENDROUND
         }
 
@@ -79,6 +80,7 @@ namespace PRoConEvents
             ALREADY_VOTED,
             SURRENDER_VOTING_PASSES,
             SURRENDER_VOTING_STATS,
+            SURRENDER_VOTE_PLAYER_MESSAGE,
             NO_SURRENDER_VOTING,
             VOTING_FAILED
         }
@@ -134,9 +136,10 @@ namespace PRoConEvents
             variables.Add(VariableName.VOTING_BEGINS_YELL_DURATION, new Variable<int>("Variables|Duration of yell when voting begins", 10));
             variables.Add(VariableName.VOTING_SUCCESS_YELL_DURATION, new Variable<int>("Variables|Duration of yell when voting is successful", 10));
             variables.Add(VariableName.DELAY_ENDROUND, new Variable<int>("Variables|Time (in seconds) delay between successful surrender and end of round", 5));
+            variables.Add(VariableName.SURRENDER_VOTING_STATS_INTERVAL, new Variable<int>("Variables|Print stats every N seconds, 0 = on every vote", 0));
 
             bools = new Dictionary<BoolName, Variable<bool>>();
-            bools.Add(BoolName.SAY_VOTING_BEGINS_TO_ALL, new Variable<bool>("Variables|Say and/or yell 'surrender voting begins' to all (false = team only, true = to all)", false));
+            bools.Add(BoolName.SAY_VOTING_BEGINS_TO_ALL, new Variable<bool>("Variables|Say and/or yell 'surrender voting begins' to all (true) or team (false)", true));
             bools.Add(BoolName.DEBUG_MODE, new Variable<bool>("Variables|Debug mode", false));
 
             messages = new Dictionary<MessageName, Variable<string>>();
@@ -151,6 +154,7 @@ namespace PRoConEvents
             messages.Add(MessageName.ALREADY_VOTED, new Variable<string>("Messages|Already voted", "You've already voted!"));
             messages.Add(MessageName.SURRENDER_VOTING_PASSES, new Variable<string>("Messages|Surrender voting successful ({0} = vote count)", "Surrender voting passed with {0} votes! Losing team has surrendered to the winning team, ending round..."));
             messages.Add(MessageName.SURRENDER_VOTING_STATS, new Variable<string>("Messages|Surrender voting stats ({0} = vote count, {1} = votes needed, {2} = time left)", "Surrender voting: {0}/{1}. {2} left to vote!"));
+            messages.Add(MessageName.SURRENDER_VOTE_PLAYER_MESSAGE, new Variable<string>("Messages|Message to player after they vote ({0} = vote count, {1} = votes needed, {2} = time left, {3} = player name)", "{3}, you voted to surrender. Surrender voting: {0}/{1}. {2} left to vote!"));
             messages.Add(MessageName.NO_SURRENDER_VOTING, new Variable<string>("Messages|No surrender voting going on", "No surrender voting going on at the moment."));
             messages.Add(MessageName.VOTING_FAILED, new Variable<string>("Messages|Surrender voting failed ({0} = vote count, {1} votes needed)", "Surrender voting failed! {0}/{1} votes were cast."));
         }
@@ -328,7 +332,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.1.2";
+            return "1.1.3";
         }
 
         public string GetPluginAuthor()
@@ -351,6 +355,10 @@ namespace PRoConEvents
         <tr><td><b>/surrender<br/>!surrender<br/>@surrender<b></td><td>Initiates or adds a vote to current surrender vote.</td></tr>
         <tr><td><b>/surrenderstatus<br/>!surrenderstatus<br/>@surrenderstatus<b></td><td>Prints vote count, votes needed, and time left of current surrender vote.</td></tr>
         </table>
+        <br />
+        <br />
+        <p>
+        Make sure to restart the current round after enabling this plugin, in order to get the correct initial ticket count.
         ";
         }
 
@@ -447,15 +455,6 @@ namespace PRoConEvents
 
                 if (v.Description.Contains(strVariable))
                 {
-                    for (int a = 0; v.Description.Contains("{" + a + "}"); a++)
-                    {
-                        if (!strValue.Contains("{" + a + "}"))
-                        {
-                            ConsoleError("Invalid message for " + name + " due to missing param " + a + ".");
-                            return;
-                        }
-                    }
-
                     v.Value = strValue;
 
                     ConsoleWrite(name + " message modified.");
@@ -486,7 +485,7 @@ namespace PRoConEvents
             {
                 if (Regex.Match(message, @"^[/]?[@!]?surrenderstatus", RegexOptions.IgnoreCase).Success)
                 {
-                    ConsoleDebug("Player '" + speaker + "' has typed /surrenderstatus");
+                    ConsoleWrite("Player '" + speaker + "' has typed /surrenderstatus");
 
                     if (!isConquest)
                     {
@@ -507,7 +506,7 @@ namespace PRoConEvents
                 }
                 else if (Regex.Match(message, @"^[/]?[@!]?surrender", RegexOptions.IgnoreCase).Success)
                 {
-                    ConsoleDebug("Player '" + speaker + "' has typed /surrender");
+                    ConsoleWrite("Player '" + speaker + "' has typed /surrender");
 
                     if (!isConquest)
                     {
@@ -663,7 +662,12 @@ namespace PRoConEvents
                         else
                         {
                             int leftTime = variables[VariableName.TIMEOUT].Value - (int)(DateTime.Now - surrenderVotingStart).TotalSeconds;
-                            AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_STATS].Value, votedNames.Count, votesNeeded, formatTime(leftTime)), surrenderingTeamID);
+
+                            if(variables[VariableName.SURRENDER_VOTING_STATS_INTERVAL].Value == 0)
+                                AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_STATS].Value, votedNames.Count, votesNeeded, formatTime(leftTime)), surrenderingTeamID);
+                            else
+                                AdminSayPlayer(String.Format(messages[MessageName.SURRENDER_VOTE_PLAYER_MESSAGE].Value, votedNames.Count, votesNeeded, formatTime(leftTime), speaker), speaker);
+
                             ConsoleWrite("Surrender voting: " + votedNames.Count + "/" + votesNeeded + ". " + formatTime(leftTime) + " left to vote!");
                         }
                     }
@@ -687,18 +691,31 @@ namespace PRoConEvents
         private void timeoutCountdown()
         {
             double timeout = variables[VariableName.TIMEOUT].Value;
+
+            DateTime start = DateTime.Now;
             do
             {
-                DateTime start = DateTime.Now;
-
                 try
                 {
-                    Thread.Sleep((int)Math.Round(timeout * 1000));
+                    int interval = variables[VariableName.SURRENDER_VOTING_STATS_INTERVAL].Value;
+
+                    if (interval == 0)
+                        Thread.Sleep((int)Math.Round(timeout * 1000));
+                    else
+                    {
+                        Thread.Sleep((int)Math.Round(Math.Min(timeout, interval) * 1000));
+
+                        int leftTime = variables[VariableName.TIMEOUT].Value - (int)(DateTime.Now - surrenderVotingStart).TotalSeconds;
+                        if(leftTime > 0)
+                            AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_STATS].Value, votedNames.Count, votesNeeded, formatTime(leftTime)), surrenderingTeamID);
+                    }
                 }
                 catch
                 { }
 
-                timeout -= (DateTime.Now - start).TotalSeconds;
+                DateTime now = DateTime.Now;
+                timeout -= (now - start).TotalSeconds;
+                start = now;
             } while (timeout >= 0);
 
             lock (this) {
@@ -751,6 +768,8 @@ namespace PRoConEvents
 
             startTicketCount = -1;
 
+            isConquest = serverInfo.GameMode.ToLower().Contains("conquest");
+
             ConsoleDebug("Level loaded! Is conquest? " + isConquest);
         }
 
@@ -773,8 +792,6 @@ namespace PRoConEvents
         {
             resetVoting();
 
-            startTicketCount = -1;
-
             ConsoleDebug("Level ending!");
         }
 
@@ -788,7 +805,7 @@ namespace PRoConEvents
 
                 isConquest = serverInfo.GameMode.ToLower().Contains("conquest");
 
-                startTicketCount = serverInfo.TeamScores[0].Score;
+                startTicketCount = (serverInfo.TeamScores[0].Score + serverInfo.TeamScores[1].Score) / 2;
                 roundStartTime = DateTime.Now;
 
                 ConsoleDebug("Start Ticket Count initially set: " + startTicketCount);
