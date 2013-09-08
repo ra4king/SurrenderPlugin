@@ -332,7 +332,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.1.3";
+            return "1.1.4";
         }
 
         public string GetPluginAuthor()
@@ -352,8 +352,8 @@ namespace PRoConEvents
         <br />
         <h2>Commands</h2>
         <table>
-        <tr><td><b>/surrender<br/>!surrender<br/>@surrender<b></td><td>Initiates or adds a vote to current surrender vote.</td></tr>
-        <tr><td><b>/surrenderstatus<br/>!surrenderstatus<br/>@surrenderstatus<b></td><td>Prints vote count, votes needed, and time left of current surrender vote.</td></tr>
+        <tr><td><b>/surrender<b></td><td>Initiates or adds a vote to current surrender vote.</td></tr>
+        <tr><td><b>/surrenderstatus<b></td><td>Prints vote count, votes needed, and time left of current surrender vote.</td></tr>
         </table>
         <br />
         <br />
@@ -481,10 +481,19 @@ namespace PRoConEvents
             if (!pluginEnabled)
                 return;
 
+            if (!message.Contains("surrender"))
+                return;
+
             lock (this)
             {
                 if (Regex.Match(message, @"^[/]?[@!]?surrenderstatus", RegexOptions.IgnoreCase).Success)
                 {
+                    if (!message.StartsWith("/surrenderstatus"))
+                    {
+                        AdminSayPlayer("Did you mean /surrenderstatus?", speaker);
+                        return;
+                    }
+
                     ConsoleWrite("Player '" + speaker + "' has typed /surrenderstatus");
 
                     if (!isConquest)
@@ -506,6 +515,12 @@ namespace PRoConEvents
                 }
                 else if (Regex.Match(message, @"^[/]?[@!]?surrender", RegexOptions.IgnoreCase).Success)
                 {
+                    if (!message.StartsWith("/surrender"))
+                    {
+                        AdminSayPlayer("Did you mean /surrender?", speaker);
+                        return;
+                    }
+
                     ConsoleWrite("Player '" + speaker + "' has typed /surrender");
 
                     if (!isConquest)
