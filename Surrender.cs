@@ -64,6 +64,7 @@ namespace PRoConEvents
         private enum BoolName
         {
             SAY_VOTING_BEGINS_TO_ALL,
+            USE_FORWARD_SLASH_ONLY,
             DEBUG_MODE
         }
 
@@ -140,6 +141,7 @@ namespace PRoConEvents
 
             bools = new Dictionary<BoolName, Variable<bool>>();
             bools.Add(BoolName.SAY_VOTING_BEGINS_TO_ALL, new Variable<bool>("Variables|Say and/or yell 'surrender voting begins' to all (true) or team (false)", true));
+            bools.Add(BoolName.USE_FORWARD_SLASH_ONLY, new Variable<bool>("Variables|Use foward slash only (true) or allow exclamation mark (!) and at symbol (@) (false)", true));
             bools.Add(BoolName.DEBUG_MODE, new Variable<bool>("Variables|Debug mode", false));
 
             messages = new Dictionary<MessageName, Variable<string>>();
@@ -332,7 +334,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.1.4";
+            return "1.1.5";
         }
 
         public string GetPluginAuthor()
@@ -481,6 +483,8 @@ namespace PRoConEvents
             if (!pluginEnabled)
                 return;
 
+            message = message.ToLower();
+
             if (!message.Contains("surrender"))
                 return;
 
@@ -488,7 +492,7 @@ namespace PRoConEvents
             {
                 if (Regex.Match(message, @"^[/]?[@!]?surrenderstatus", RegexOptions.IgnoreCase).Success)
                 {
-                    if (!message.StartsWith("/surrenderstatus"))
+                    if (bools[BoolName.USE_FORWARD_SLASH_ONLY].Value && !message.StartsWith("/surrenderstatus"))
                     {
                         AdminSayPlayer("Did you mean /surrenderstatus?", speaker);
                         return;
@@ -510,12 +514,12 @@ namespace PRoConEvents
                     else
                     {
                         int leftTime = variables[VariableName.TIMEOUT].Value - (int)(DateTime.Now - surrenderVotingStart).TotalSeconds;
-                        AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_STATS].Value, votedNames.Count, votesNeeded, formatTime(leftTime)), surrenderingTeamID);
+                        AdminSayPlayer(String.Format(messages[MessageName.SURRENDER_VOTING_STATS].Value, votedNames.Count, votesNeeded, formatTime(leftTime)), speaker);
                     }
                 }
                 else if (Regex.Match(message, @"^[/]?[@!]?surrender", RegexOptions.IgnoreCase).Success)
                 {
-                    if (!message.StartsWith("/surrender"))
+                    if (bools[BoolName.USE_FORWARD_SLASH_ONLY].Value && !message.StartsWith("/surrender"))
                     {
                         AdminSayPlayer("Did you mean /surrender?", speaker);
                         return;
