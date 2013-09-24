@@ -478,22 +478,6 @@ namespace PRoConEvents
             OnGlobalChat(speaker, message);
         }
 
-        public static void Main(string[] args)
-        {
-            while (true)
-            {
-                string message = Console.ReadLine().Trim();
-
-                if (message == "")
-                    return;
-
-                if (Regex.Match(message, @"^[/@!]surrender", RegexOptions.IgnoreCase).Success)
-                    Console.WriteLine("HOLY SHIT!");
-                else
-                    Console.WriteLine("Fuck you.");
-            }
-        }
-
         public override void OnGlobalChat(string speaker, string message)
         {
             if (!pluginEnabled)
