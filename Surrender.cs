@@ -410,7 +410,7 @@ namespace PRoConEvents
         <p>
         Admin.Yell messages may not exceed 256 characters.
         <br />
-        Admin.Say messages can exceed 128 characters, they are appropriately split up by, in order of precendence: newlines, end-of-sentence punctuation marks, commas, spaces, or arbitrarily.
+        Admin.Say messages can exceed 128 characters, they are appropriately split up by, in order of precedence: newlines, end-of-sentence punctuation marks, commas, spaces, or arbitrarily.
         </p>
         <br />
         <p>
