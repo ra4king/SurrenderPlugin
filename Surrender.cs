@@ -334,7 +334,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.1.5";
+            return "1.2.1";
         }
 
         public string GetPluginAuthor()
@@ -478,9 +478,28 @@ namespace PRoConEvents
             OnGlobalChat(speaker, message);
         }
 
+        public static void Main(string[] args)
+        {
+            while (true)
+            {
+                string message = Console.ReadLine().Trim();
+
+                if (message == "")
+                    return;
+
+                if (Regex.Match(message, @"^[/@!]surrender", RegexOptions.IgnoreCase).Success)
+                    Console.WriteLine("HOLY SHIT!");
+                else
+                    Console.WriteLine("Fuck you.");
+            }
+        }
+
         public override void OnGlobalChat(string speaker, string message)
         {
             if (!pluginEnabled)
+                return;
+
+            if (speaker.ToLower().Equals("server"))
                 return;
 
             message = message.ToLower();
@@ -490,9 +509,9 @@ namespace PRoConEvents
 
             lock (this)
             {
-                if (Regex.Match(message, @"^[/]?[@!]?surrenderstatus", RegexOptions.IgnoreCase).Success)
+                if (Regex.Match(message, @"^[/@!]surrenderstatus", RegexOptions.IgnoreCase).Success)
                 {
-                    if (bools[BoolName.USE_FORWARD_SLASH_ONLY].Value && !message.StartsWith("/surrenderstatus"))
+                    if (bools[BoolName.USE_FORWARD_SLASH_ONLY].Value && !message.Equals("/surrenderstatus"))
                     {
                         AdminSayPlayer("Did you mean /surrenderstatus?", speaker);
                         return;
@@ -517,9 +536,9 @@ namespace PRoConEvents
                         AdminSayPlayer(String.Format(messages[MessageName.SURRENDER_VOTING_STATS].Value, votedNames.Count, votesNeeded, formatTime(leftTime)), speaker);
                     }
                 }
-                else if (Regex.Match(message, @"^[/]?[@!]?surrender", RegexOptions.IgnoreCase).Success)
+                else if (Regex.Match(message, @"^[/@!]surrender", RegexOptions.IgnoreCase).Success)
                 {
-                    if (bools[BoolName.USE_FORWARD_SLASH_ONLY].Value && !message.StartsWith("/surrender"))
+                    if (bools[BoolName.USE_FORWARD_SLASH_ONLY].Value && !message.Equals("/surrender"))
                     {
                         AdminSayPlayer("Did you mean /surrender?", speaker);
                         return;
@@ -642,15 +661,17 @@ namespace PRoConEvents
 
                         if (bools[BoolName.SAY_VOTING_BEGINS_TO_ALL].Value)
                         {
-                            AdminSayAll(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)));
+                            string msg = String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout));
+                            AdminSayAll(msg);
                             if (variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value > 0)
-                                AdminYellAll(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
+                                AdminYellAll(msg, variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
                         }
                         else
                         {
-                            AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID);
+                            string msg = String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout));
+                            AdminSayTeam(msg, surrenderingTeamID);
                             if (variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value > 0)
-                                AdminYellTeam(String.Format(messages[MessageName.SURRENDER_VOTING_BEGINS].Value, votesNeeded, formatTime(timeout)), surrenderingTeamID, variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
+                                AdminYellTeam(msg, surrenderingTeamID, variables[VariableName.VOTING_BEGINS_YELL_DURATION].Value);
                         }
                         
                         ConsoleWrite("Surrender voting begins by Team " + surrenderingTeamID + " with " + votesNeeded + " votes needed.");
@@ -725,7 +746,7 @@ namespace PRoConEvents
                         Thread.Sleep((int)Math.Round(Math.Min(timeout, interval) * 1000));
 
                         int leftTime = variables[VariableName.TIMEOUT].Value - (int)(DateTime.Now - surrenderVotingStart).TotalSeconds;
-                        if(leftTime > 0)
+                        if(leftTime > interval)
                             AdminSayTeam(String.Format(messages[MessageName.SURRENDER_VOTING_STATS].Value, votedNames.Count, votesNeeded, formatTime(leftTime)), surrenderingTeamID);
                     }
                 }
