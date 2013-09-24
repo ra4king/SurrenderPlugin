@@ -224,35 +224,29 @@ namespace PRoConEvents
 
         public void AdminSayAll(string msg)
         {
-            if (msg.Length > 128)
-                ConsoleError("AdminSay msg > 128. msg: " + msg);
-
             if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Saying to all: " + msg);
 
-            this.ExecuteCommand("procon.protected.send", "admin.say", msg, "all");
+            foreach (string s in splitMessage(msg, 128))
+                this.ExecuteCommand("procon.protected.send", "admin.say", s, "all");
         }
 
         public void AdminSayTeam(string msg, int teamID)
         {
-            if (msg.Length > 128)
-                ConsoleError("AdminSay msg > 128. msg: " + msg);
-
             if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Saying to Team " + teamID + ": " + msg);
 
-            this.ExecuteCommand("procon.protected.send", "admin.say", msg, "team", string.Concat(teamID));
+            foreach (string s in splitMessage(msg, 128))
+                this.ExecuteCommand("procon.protected.send", "admin.say", s, "team", string.Concat(teamID));
         }
 
         public void AdminSaySquad(string msg, int teamID, int squadID)
         {
-            if (msg.Length > 128)
-                ConsoleError("AdminSay msg > 128. msg: " + msg);
-
             if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Saying to Squad " + squadID + " in Team " + teamID + ": " + msg);
 
-            this.ExecuteCommand("procon.protected.send", "admin.say", msg, "squad", string.Concat(teamID), string.Concat(squadID));
+            foreach (string s in splitMessage(msg, 128))
+                this.ExecuteCommand("procon.protected.send", "admin.say", s, "squad", string.Concat(teamID), string.Concat(squadID));
         }
 
         public void AdminSayPlayer(string msg, string player)
@@ -260,7 +254,8 @@ namespace PRoConEvents
             if (bools[BoolName.DEBUG_MODE].Value)
                 ConsoleDebug("Saying to player '" + player + "': " + msg);
 
-            this.ExecuteCommand("procon.protected.send", "admin.say", msg, "player", player);
+            foreach (string s in splitMessage(msg, 128))
+                this.ExecuteCommand("procon.protected.send", "admin.say", s, "player", player);
         }
 
         public void AdminYellAll(string msg)
@@ -327,6 +322,59 @@ namespace PRoConEvents
             this.ExecuteCommand("procon.protected.send", "admin.yell", msg, string.Concat(duration), "player", player);
         }
 
+        private List<string> splitMessage(string message, int maxSize)
+        {
+            List<string> messages = new List<string>(message.Replace("\r", "").Trim().Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries));
+
+            for (int a = 0; a < messages.Count; a++)
+            {
+                messages[a] = messages[a].Trim();
+
+                string msg = messages[a];
+
+                if (msg.Length > maxSize)
+                {
+                    List<int> splitOptions = new List<int>();
+                    int split = -1;
+                    do
+                    {
+                        split = msg.IndexOfAny(new char[] { '.', '!', '?', ';' }, split + 1);
+                        if(split != -1 && split != msg.Length - 1)
+                            splitOptions.Add(split);
+                    } while (split != -1);
+
+                    if (splitOptions.Count > 2)
+                        split = splitOptions[(int)Math.Round(splitOptions.Count / 2.0)] + 1;
+                    else if (splitOptions.Count > 0)
+                        split = splitOptions[0] + 1;
+                    else
+                    {
+                        split = msg.IndexOf(',');
+
+                        if (split == -1)
+                        {
+                            split = msg.IndexOf(' ', msg.Length / 2);
+
+                            if (split == -1)
+                            {
+                                split = msg.IndexOf(' ');
+
+                                if(split == -1)
+                                    split = maxSize / 2;
+                            }
+                        }
+                    }
+
+                    messages[a] = msg.Substring(0, split).Trim();
+                    messages.Insert(a + 1, msg.Substring(split).Trim());
+
+                    a--;
+                }
+            }
+
+            return messages;
+        }
+
         public string GetPluginName()
         {
             return "Surrender Plugin";
@@ -334,7 +382,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.2.1";
+            return "1.2.5";
         }
 
         public string GetPluginAuthor()
@@ -360,7 +408,14 @@ namespace PRoConEvents
         <br />
         <br />
         <p>
+        Admin.Yell messages may not exceed 256 characters.
+        <br />
+        Admin.Say messages can exceed 128 characters, they are appropriately split up by, in order of precendence: newlines, end-of-sentence punctuation marks, commas, spaces, or arbitrarily.
+        </p>
+        <br />
+        <p>
         Make sure to restart the current round after enabling this plugin, in order to get the correct initial ticket count.
+        </p>
         ";
         }
 
