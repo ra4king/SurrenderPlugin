@@ -382,7 +382,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.2.5";
+            return "1.2.6";
         }
 
         public string GetPluginAuthor()
@@ -451,7 +451,7 @@ namespace PRoConEvents
             foreach (BoolName name in bools.Keys)
                 pluginVariables.Add(new CPluginVariable(bools[name].Description, "bool", string.Concat(bools[name].Value)));
             foreach (MessageName name in messages.Keys)
-                pluginVariables.Add(new CPluginVariable(messages[name].Description, "string", messages[name].Value));
+                pluginVariables.Add(new CPluginVariable(messages[name].Description, "multiline", messages[name].Value));
 
             return pluginVariables;
         }
