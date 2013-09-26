@@ -330,6 +330,16 @@ namespace PRoConEvents
             {
                 messages[a] = messages[a].Trim();
 
+                if (messages[a] == "")
+                {
+                    messages.RemoveAt(a);
+                    a--;
+                    continue;
+                }
+
+                if (messages[a][0] == '/')
+                    messages[a] = ' ' + messages[a];
+
                 string msg = messages[a];
 
                 if (msg.Length > maxSize)
@@ -382,7 +392,7 @@ namespace PRoConEvents
 
         public string GetPluginVersion()
         {
-            return "1.2.6";
+            return "1.2.7";
         }
 
         public string GetPluginAuthor()
